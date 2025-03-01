@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Dashboard - Business Management System</title>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700" rel="stylesheet">
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+  <style>
+    /* Global Styles */
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #e0eafc, #cfdef3);
+      margin: 0;
+      padding: 20px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+    }
+    .header-logo {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 10px;
+    }
+    .logout-btn {
+      padding: 8px 16px;
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .logout-btn:hover { background: #c0392b; }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    /* Tab Navigation for Interfaces */
+    .tab-nav {
+      display: flex;
+      border-bottom: 2px solid #ddd;
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    .tab-nav button {
+      flex: 1;
+      padding: 12px;
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .tab-nav button:hover { background: #f0f0f0; }
+    .tab-nav button.active {
+      border-bottom: 3px solid #3498db;
+      font-weight: bold;
+    }
+    /* Analytics Interface */
+    .filter-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f0f4f8;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .filter-section label {
+      margin-right: 10px;
+      font-weight: 500;
+    }
+    .filter-section input {
+      margin-right: 10px;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .filter-section button {
+      padding: 8px 16px;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .filter-section button:hover { background: #2980b9; }
+    .sales-card {
+      background: #f7f9fc;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .sales-card table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .sales-card th, .sales-card td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+    .sales-card th { background: #3498db; color: #fff; }
+    .sales-summary {
+      margin-top: 15px;
+      font-size: 16px;
+    }
+    /* Conversation Interface (Modified) */
+    .chat-top-bar {
+      display: flex;
+      align-items: center;
+      background: #f1f1f1;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    .chat-logo {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    .chat-area {
+      height: 400px;
+      overflow-y: auto;
+      background: url('https://t3.ftcdn.net/jpg/01/99/79/88/360_F_199798806_PAFfWGapie6Mk8igqKHbhIIa9LwQcvQr.jpg') no-repeat center center;
+      background-size: cover;
+      padding: 10px;
+    }
+    .chat-bottom-bar {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #ddd;
+    }
+    .chat-bottom-bar input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      margin-right: 10px;
+    }
+    .chat-bottom-bar button {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+    }
+    .chat-bubble {
+      max-width: 70%;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      position: relative;
+      clear: both;
+    }
+    /* On Employee Page: Employee-sent messages (green bubble) */
+    .chat-bubble.employee {
+      background: #27ae60; /* green */
+      color: #fff;
+      margin-left: auto;
+    }
+    /* On Employee Page: Admin-sent messages (white bubble) */
+    .chat-bubble.admin {
+      background: #fff; /* white */
+      color: #000;
+      border: 1px solid #ddd;
+      margin-right: auto;
+      padding-left: 50px;
+    }
+    .chat-bubble.admin .admin-name {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
+    /* Settings Interface */
+    .account-settings {
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .account-settings h3 { margin-top: 0; }
+    .account-settings label { display: block; margin-top: 10px; }
+    .account-settings input[type="text"],
+    .account-settings input[type="password"],
+    .account-settings input[type="file"] {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .account-settings button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .account-settings button:hover { background: #2980b9; }
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container { padding: 20px; }
+      .header { flex-direction: column; align-items: flex-start; }
+      .logout-btn { align-self: stretch; text-align: center; }
+      .chat-area { height: 200px; }
+      .tab-nav button { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <img class="header-logo" id="employeePhotoDisplay" src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25" alt="Employee Photo">
+      <h1 id="employeeNameDisplay">Employee Dashboard</h1>
+    </div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+  <div class="container">
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button class="active" onclick="showEmployeeTab('analytics')">Analytics</button>
+      <button onclick="showEmployeeTab('conversation')">Conversation</button>
+      <button onclick="showEmployeeTab('settings')">Settings</button>
+    </div>
+    
+    <!-- Analytics Interface -->
+    <div id="analytics" class="employee-tab" style="display: block;">
+      <div class="filter-section">
+        <label>Filter Sales By:</label>
+        <label>
+          <input type="radio" name="filterType" value="day" checked onclick="toggleFilterInputs('day')"> Day
+        </label>
+        <label>
+          <input type="radio" name="filterType" value="month" onclick="toggleFilterInputs('month')"> Month
+        </label>
+        <label>
+          <input type="radio" name="filterType" value="period" onclick="toggleFilterInputs('period')"> Custom Period
+        </label>
+        <div id="filterDay" style="margin-top:10px;">
+          <input type="date" id="filterDayInput">
+        </div>
+        <div id="filterMonth" style="margin-top:10px; display:none;">
+          <input type="month" id="filterMonthInput">
+        </div>
+        <div id="filterPeriod" style="margin-top:10px; display:none;">
+          <label>From:</label>
+          <input type="date" id="filterStartDate">
+          <label>To:</label>
+          <input type="date" id="filterEndDate">
+        </div>
+        <button onclick="loadSalesData()">Apply Filter</button>
+      </div>
+      <h2>Your Sales & Profit Data</h2>
+      <div id="salesData" class="sales-card">
+        <!-- Sales table loads here -->
+      </div>
+      <div class="sales-summary" id="salesSummary"></div>
+    </div>
+    
+    <!-- Conversation Interface (Modified) -->
+    <div id="conversation" class="employee-tab" style="display: none;">
+      <div class="chat-top-bar">
+        <img src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25" class="chat-logo" alt="Logo">
+        <span>Communication with Parent Company</span>
+      </div>
+      <div class="chat-area">
+        <div id="employeeChatMessages">
+          <!-- Chat messages will load here -->
+        </div>
+      </div>
+      <div class="chat-bottom-bar">
+        <input type="text" id="employeeChatInput" placeholder="Type your message...">
+        <button onclick="sendEmployeeChatMessage()"><i class="send-icon">✈️</i></button>
+      </div>
+    </div>
+    
+    <!-- Settings Interface -->
+    <div id="settings" class="employee-tab" style="display: none;">
+      <div class="account-settings">
+        <h3>Account Settings</h3>
+        <label for="accUsername">Change Username:</label>
+        <input type="text" id="accUsername" placeholder="New Username">
+        <label for="accPassword">Change Password:</label>
+        <input type="password" id="accPassword" placeholder="New Password">
+        <label for="accPhoto">Change Personal Photo:</label>
+        <input type="file" id="accPhoto" accept="image/*">
+        <button onclick="updateAccountSettings()">Update Settings</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAi3_y7ugKB0cgzMV1-IVvbE2BwG_9RKSs",
+      authDomain: "team-analysis-3c196.firebaseapp.com",
+      databaseURL: "https://team-analysis-3c196-default-rtdb.firebaseio.com",
+      projectId: "team-analysis-3c196",
+      storageBucket: "team-analysis-3c196.firebasestorage.app",
+      messagingSenderId: "38968485922",
+      appId: "1:38968485922:web:667832a4aa77599ba8a6fb",
+      measurementId: "G-853WkH2JK7"
+    };
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const storage = firebase.storage();
+
+    // Retrieve logged-in employee's name
+    const employeeName = localStorage.getItem('employeeName');
+    if (!employeeName) {
+      alert("No employee session found. Please login again.");
+      window.location.href = "login.html";
+    }
+    document.getElementById('employeeNameDisplay').textContent = "Welcome, " + employeeName;
+
+    // Global variable for Top Seller designations
+    let topSellerDesignations = {};
+    database.ref('topSellerDesignations').on('value', snapshot => {
+      topSellerDesignations = snapshot.val() || {};
+    });
+
+    // Helper: Get Top Seller rate for a sale
+    function getTopSellerRate(empName, saleDate) {
+      let rate = 0.5; // default for regular employee
+      for (const key in topSellerDesignations) {
+        const des = topSellerDesignations[key];
+        if (des.employee === empName) {
+          const start = new Date(des.startDate);
+          const end = new Date(des.endDate);
+          const saleDt = new Date(saleDate);
+          if (saleDt >= start && saleDt <= end) {
+            rate = 0.6;
+            break;
+          }
+        }
+      }
+      return rate;
+    }
+
+    // Load Sales Data (Analytics Interface)
+    function loadSalesData() {
+      database.ref('employees').orderByChild('name').equalTo(employeeName).once('value')
+      .then(empSnapshot => {
+        let employeeType = "regular";
+        empSnapshot.forEach(child => { employeeType = child.val().type; });
+        database.ref('sales').orderByChild('seller').equalTo(employeeName).once('value')
+        .then(snapshot => {
+          const salesData = snapshot.val() || {};
+          let totalSales = 0;
+          let totalProfit = 0;
+          let tableHTML = "<table><tr><th>Product</th><th>Original Price (₪)</th><th>Sale Price (₪)</th><th>Date</th></tr>";
+          const filterType = document.querySelector('input[name="filterType"]:checked').value;
+          let filterFn = sale => true;
+          if (filterType === "day") {
+            const day = document.getElementById('filterDayInput').value;
+            if (day) { filterFn = sale => sale.date.slice(0,10) === day; }
+          } else if (filterType === "month") {
+            const month = document.getElementById('filterMonthInput').value;
+            if (month) { filterFn = sale => sale.date.startsWith(month); }
+          } else if (filterType === "period") {
+            const start = new Date(document.getElementById('filterStartDate').value);
+            const end = new Date(document.getElementById('filterEndDate').value);
+            if(document.getElementById('filterStartDate').value && document.getElementById('filterEndDate').value) {
+              filterFn = sale => {
+                const saleDate = new Date(sale.date);
+                return saleDate >= start && saleDate <= end;
+              };
+            }
+          }
+          for (const key in salesData) {
+            const sale = salesData[key];
+            if (!filterFn(sale)) continue;
+            totalSales++;
+            const rawProfit = parseFloat(sale.salePrice) - parseFloat(sale.originalPrice);
+            let percentage = 0.5;
+            if (employeeType === "distinguished") {
+              percentage = 0.7;
+            } else if (employeeType === "regular") {
+              percentage = getTopSellerRate(employeeName, sale.date);
+            }
+            totalProfit += rawProfit * percentage;
+            tableHTML += `<tr>
+              <td>${sale.productName}</td>
+              <td>₪${sale.originalPrice}</td>
+              <td>₪${sale.salePrice}</td>
+              <td>${new Date(sale.date).toLocaleDateString()}</td>
+            </tr>`;
+          }
+          tableHTML += "</table>";
+          document.getElementById('salesData').innerHTML = tableHTML;
+          document.getElementById('salesSummary').innerHTML = `<p>Total Sales: ${totalSales} | Total Profit: ₪${totalProfit.toFixed(2)}</p>`;
+        });
+      });
+    }
+    loadSalesData();
+
+    // Toggle Filter Inputs (Analytics Interface)
+    function toggleFilterInputs(type) {
+      document.getElementById('filterDay').style.display = (type === 'day') ? 'block' : 'none';
+      document.getElementById('filterMonth').style.display = (type === 'month') ? 'block' : 'none';
+      document.getElementById('filterPeriod').style.display = (type === 'period') ? 'block' : 'none';
+    }
+
+    // Load Employee Photo for Header
+    function loadEmployeePhoto() {
+      database.ref('employees').orderByChild('name').equalTo(employeeName).once('value')
+      .then(snapshot => {
+        let empPhoto = "";
+        snapshot.forEach(child => { empPhoto = child.val().photo; });
+        if (empPhoto) {
+          document.getElementById('employeePhotoDisplay').src = empPhoto;
+        }
+      });
+    }
+    loadEmployeePhoto();
+
+    /* ------------------ Conversation Interface Functions for Employee ------------------ */
+    function loadEmployeeChatMessages() {
+      database.ref('conversation').orderByChild('date').on('value', snapshot => {
+        const messagesData = snapshot.val() || {};
+        let chatHTML = "";
+        for (const key in messagesData) {
+          const msg = messagesData[key];
+          if (msg.sender === "admin") {
+            // Admin-sent messages: white bubble
+            chatHTML += `<div class="chat-bubble admin">
+              <span class="admin-name">Admin</span>
+              <span>${msg.message}</span>
+              <div style="font-size:10px;">${new Date(msg.date).toLocaleTimeString()}</div>
+            </div>`;
+          } else {
+            // Employee-sent messages: green bubble
+            chatHTML += `<div class="chat-bubble employee">
+              <span>${msg.message}</span>
+              <div style="font-size:10px; text-align:right;">${new Date(msg.date).toLocaleTimeString()}</div>
+            </div>`;
+          }
+        }
+        document.getElementById('employeeChatMessages').innerHTML = chatHTML;
+        document.querySelector('.chat-area').scrollTop = document.querySelector('.chat-area').scrollHeight;
+      });
+    }
+    loadEmployeeChatMessages();
+    function sendEmployeeChatMessage() {
+      const input = document.getElementById('employeeChatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      const messageData = {
+        sender: "employee",
+        employeeUsername: localStorage.getItem('employeeUsername'),
+        message: text,
+        date: new Date().toISOString()
+      };
+      database.ref('conversation').push(messageData)
+      .then(() => { input.value = ""; });
+    }
+
+    /* ------------------ Settings Interface ------------------ */
+    function updateAccountSettings() {
+      const newUsername = document.getElementById('accUsername').value.trim();
+      const newPassword = document.getElementById('accPassword').value.trim();
+      const fileInput = document.getElementById('accPhoto');
+      database.ref('employees').orderByChild('name').equalTo(employeeName).once('value')
+      .then(snapshot => {
+        let empKey = null;
+        snapshot.forEach(child => { empKey = child.key; });
+        if (!empKey) return;
+        let updates = {};
+        if(newUsername) { updates.username = newUsername; }
+        if(newPassword) { updates.password = newPassword; }
+        if (fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          const storageRef = storage.ref();
+          const fileRef = storageRef.child('employee_photos/' + Date.now() + "_" + file.name);
+          fileRef.put(file).then(() => {
+            fileRef.getDownloadURL().then(photoURL => {
+              updates.photo = photoURL;
+              database.ref('employees/' + empKey).update(updates);
+              database.ref('employeeAccounts').orderByChild('name').equalTo(employeeName).once('value')
+              .then(snap => {
+                snap.forEach(child => {
+                  child.ref.update({ username: newUsername || child.val().username, password: newPassword || child.val().password });
+                });
+              });
+              loadEmployeePhoto();
+              alert("Account settings updated.");
+            });
+          });
+        } else {
+          database.ref('employees/' + empKey).update(updates);
+          database.ref('employeeAccounts').orderByChild('name').equalTo(employeeName).once('value')
+          .then(snap => {
+            snap.forEach(child => {
+              child.ref.update({ username: newUsername || child.val().username, password: newPassword || child.val().password });
+            });
+          });
+          alert("Account settings updated.");
+        }
+      });
+    }
+
+    /* ------------------ Tab Navigation for Employee Page ------------------ */
+    function showEmployeeTab(tabName) {
+      document.querySelectorAll('.employee-tab').forEach(tab => tab.style.display = 'none');
+      const tabs = document.querySelectorAll('.tab-nav button');
+      tabs.forEach(btn => btn.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      document.getElementById(tabName).style.display = 'block';
+    }
+
+    /* Message Form Submission (for additional messages) */
+    document.getElementById('messageForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const messageText = document.getElementById('messageText').value.trim();
+      if (!messageText) return;
+      const messageData = {
+        employeeUsername: localStorage.getItem('employeeUsername'),
+        message: messageText,
+        date: new Date().toISOString(),
+        reply: ""
+      };
+      database.ref('employeeMessages').push(messageData)
+      .then(() => {
+        document.getElementById('messageAlert').textContent = "Message sent successfully!";
+        document.getElementById('messageText').value = "";
+      })
+      .catch(error => {
+        document.getElementById('messageAlert').textContent = "Error: " + error.message;
+      });
+    });
+
+    /* Load Replies in Conversation Interface */
+    function loadReplies() {
+      database.ref('employeeMessages').orderByChild('employeeUsername').equalTo(localStorage.getItem('employeeUsername')).on('value', snapshot => {
+        const messages = snapshot.val() || {};
+        let repliesHTML = "";
+        for (const key in messages) {
+          const msg = messages[key];
+          if (msg.reply) {
+            repliesHTML += `<div class="chat-bubble received">
+              <p>${msg.reply}</p>
+              <small>${new Date(msg.date).toLocaleString()}</small>
+            </div>`;
+          }
+        }
+        document.getElementById('replies').innerHTML = repliesHTML;
+      });
+    }
+    loadReplies();
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+  </script>
+</body>
+</html>

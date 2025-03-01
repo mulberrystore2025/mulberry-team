@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Business Management System</title>
+  <!-- Google Fonts for professional typography -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700" rel="stylesheet">
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-analytics-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+  <style>
+    :root {
+      --primary-color: #2c3e50;
+      --secondary-color: #3498db;
+      --error-color: #e74c3c;
+      --success-color: #27ae60;
+    }
+    /* Global Styles */
+    body { 
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+    }
+    .header-logo {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 10px;
+    }
+    .logout-btn {
+      padding: 8px 16px;
+      background: var(--error-color);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-top: 10px;
+    }
+    .logout-btn:hover { background: #c0392b; }
+    .container { 
+      max-width: 1200px; 
+      margin: 20px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.15);
+      transition: transform 0.3s;
+    }
+    .container:hover { transform: scale(1.01); }
+    .tabs { 
+      margin-bottom: 20px;
+      border-bottom: 2px solid #eee;
+      overflow-x: auto;
+    }
+    .tab { 
+      padding: 12px 24px; 
+      cursor: pointer; 
+      background: none;
+      border: none;
+      font-size: 16px;
+      transition: all 0.3s;
+      color: var(--primary-color);
+      white-space: nowrap;
+    }
+    .tab:hover { color: var(--secondary-color); }
+    .active { color: var(--secondary-color); border-bottom: 3px solid var(--secondary-color); }
+    .form-section { 
+      margin-bottom: 30px; 
+      padding: 25px;
+      border-radius: 8px;
+      background: #f8f9fa;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    input[type="text"], 
+    input[type="tel"],
+    input[type="number"],
+    input[type="month"],
+    input[type="date"],
+    input[type="password"],
+    select {
+      padding: 12px;
+      width: 300px;
+      margin: 8px 0;
+      border: 2px solid #eee;
+      border-radius: 6px;
+      transition: border-color 0.3s;
+    }
+    input:focus, select:focus { border-color: var(--secondary-color); outline: none; }
+    /* New file input style for photo upload */
+    input[type="file"] { margin: 8px 0; }
+    button { 
+      padding: 12px 25px;
+      background: var(--secondary-color);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+      margin: 8px 5px;
+    }
+    button:hover { background: #2980b9; transform: scale(1.05); }
+    table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+    th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+    th { background: var(--primary-color); color: #fff; }
+    table tbody tr:nth-child(even) { background: #f8f8f8; }
+    .delete-btn {
+      background: var(--error-color);
+      border: none;
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .edit-btn {
+      background: var(--success-color);
+      border: none;
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .delete-btn:hover { background: #c0392b; }
+    .edit-btn:hover { background: #219a52; }
+    .alert {
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 5px;
+      display: none;
+      max-width: 500px;
+    }
+    .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    /* Employee Cards */
+    .employee-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .employee-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      width: 200px;
+      padding: 15px;
+      text-align: center;
+      transition: transform 0.3s;
+      position: relative;
+    }
+    .employee-card:hover { transform: translateY(-5px); }
+    .employee-card img {
+      border-radius: 50%;
+      width: 100px;
+      height: 100px;
+      cursor: pointer;
+      object-fit: cover;
+    }
+    .employee-name { font-size: 18px; font-weight: 500; margin-top: 10px; }
+    .employee-type { font-size: 14px; color: var(--secondary-color); margin-bottom: 10px; }
+    .employee-actions button { margin: 5px; font-size: 12px; padding: 8px 12px; }
+    /* Analytics Styles */
+    .analytics-options { margin-bottom: 20px; }
+    .analytics-options button { margin-right: 10px; }
+    .analytics-card {
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      transition: box-shadow 0.3s;
+      margin-bottom: 20px;
+    }
+    .analytics-card:hover { box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+    .analytics-card label { font-weight: 500; margin-right: 5px; }
+    .analytics-card input, .analytics-card select { margin-bottom: 10px; }
+    /* Custom Period Inputs */
+    .custom-period { display: none; margin-top: 10px; }
+    .custom-period input { width: 140px; margin-right: 10px; }
+    /* Dismissed Employees Table */
+    #dismissedEmployees table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    #dismissedEmployees th, #dismissedEmployees td { padding: 10px; border: 1px solid #ddd; }
+    #dismissedEmployees th { background: var(--primary-color); color: #fff; }
+    /* Fade in Animation */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .tab-content { animation: fadeIn 0.5s ease-in-out; }
+    h2 { text-shadow: 1px 1px 3px rgba(0,0,0,0.1); }
+    /* Modal Styles */
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { background: #fff; padding: 20px; border-radius: 8px; max-width: 600px; width: 90%; position: relative; }
+    .modal-close { position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer; }
+    .modal h3 { margin-top: 0; }
+    .modal table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .modal table, .modal th, .modal td { border: 1px solid #eee; }
+    .modal th, .modal td { padding: 10px; text-align: left; }
+    /* Top Seller Designation Tab */
+    .designation-form { padding: 20px; background: #f8f9fa; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .designation-form input { width: 200px; margin-right: 10px; }
+    .designation-form button { margin-top: 10px; }
+    .designation-list { margin-top: 20px; }
+    .designation-item { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 6px; }
+    /* Chat Interface Styles for Admin Page */
+    .chat-top-bar {
+      display: flex;
+      align-items: center;
+      background: #f1f1f1;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    .chat-logo {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    .chat-area {
+      height: 400px;
+      overflow-y: auto;
+      background: url('https://t3.ftcdn.net/jpg/01/99/79/88/360_F_199798806_PAFfWGapie6Mk8igqKHbhIIa9LwQcvQr.jpg') no-repeat center center;
+      background-size: cover;
+      padding: 10px;
+    }
+    .chat-bottom-bar {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #ddd;
+    }
+    .chat-bottom-bar input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      margin-right: 10px;
+    }
+    .chat-bottom-bar button {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+    }
+    .chat-bubble {
+      max-width: 70%;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      position: relative;
+      clear: both;
+    }
+    /* Admin-sent messages: green bubble */
+    .chat-bubble.admin {
+      background: var(--success-color);
+      color: #fff;
+      margin-left: auto;
+    }
+    /* Employee-sent messages: white bubble with employee's name and photo */
+    .chat-bubble.employee {
+      background: #fff;
+      color: #000;
+      border: 1px solid #ddd;
+      margin-right: auto;
+      padding-left: 50px;
+    }
+    .chat-bubble.employee .emp-photo {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+    }
+    .chat-bubble.employee .emp-name {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
+    /* Delete button inside chat bubble (only admin sees this) */
+    .chat-bubble button.delete-msg {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: transparent;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container { padding: 20px; }
+      .tabs { flex-direction: column; }
+      .tab { width: 100%; text-align: center; margin-bottom: 5px; }
+      input[type="text"], 
+      input[type="tel"],
+      input[type="number"],
+      input[type="month"],
+      input[type="date"],
+      input[type="password"],
+      select, input[type="file"] { width: 100%; }
+      .employee-cards { flex-direction: column; align-items: center; }
+      .employee-card { width: 100%; }
+      table, th, td { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <!-- Header uses the same small, rounded image (from login page) -->
+      <img class="header-logo" src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25" alt="Logo">
+      <!-- Changed header text to "Admin Dashboard" -->
+      <h1 id="employeeNameDisplay">Admin Dashboard</h1>
+    </div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+  <div class="container">
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button class="tab active" onclick="showTab('employees')">Employees</button>
+      <button class="tab" onclick="showTab('sales')">Sales</button>
+      <button class="tab" onclick="showTab('analytics')">Analytics</button>
+      <button class="tab" onclick="showTab('topSellerDesignation')">Top Seller Designation</button>
+      <button class="tab" onclick="showTab('employeeAccounts')">Employee Accounts</button>
+      <button class="tab" onclick="showTab('employeeLogins')">Employee Logins</button>
+      <button class="tab" onclick="showTab('employeeMessages')">Employee Messages</button>
+      <button class="tab" onclick="showTab('dismissedEmployees')">Dismissed Employees</button>
+    </div>
+
+    <!-- Employees Tab -->
+    <div id="employees" class="tab-content">
+      <div class="form-section">
+        <h2>Add/Edit Employee</h2>
+        <form onsubmit="handleEmployeeSubmit(event)">
+          <input type="hidden" id="empKey">
+          <input type="text" id="empName" placeholder="Full Name" required>
+          <input type="tel" id="empPhone" placeholder="Phone Number" pattern="[0-9]{10}" required>
+          <select id="empType" required>
+            <option value="" disabled selected>Employee Type</option>
+            <option value="regular">Regular</option>
+            <option value="distinguished">Distinguished</option>
+          </select>
+          <!-- File upload for photo -->
+          <input type="file" id="empPhotoFile" accept="image/*">
+          <button type="submit" id="employeeSubmitBtn">Add Employee</button>
+          <button type="button" onclick="cancelEdit()" style="display: none;" id="cancelBtn">Cancel</button>
+        </form>
+        <div id="empAlert" class="alert"></div>
+      </div>
+      <h2>Employee List</h2>
+      <div id="employeeCards" class="employee-cards"></div>
+    </div>
+
+    <!-- Sales Tab -->
+    <div id="sales" class="tab-content" style="display: none;">
+      <div class="form-section">
+        <h2>Add/Edit Sale</h2>
+        <form onsubmit="handleSaleSubmit(event)">
+          <input type="hidden" id="saleKey">
+          <input type="text" id="saleItem" placeholder="Product Name" required>
+          <input type="number" id="originalPrice" placeholder="Original Price (₪)" min="0" step="0.01" required>
+          <input type="number" id="salePrice" placeholder="Sale Price (₪)" min="0" step="0.01" required>
+          <select id="sellerType" required onchange="toggleEmployeeSelect()">
+            <option value="" disabled selected>Select Seller Type</option>
+            <option value="store">Store</option>
+            <option value="employee">Employee</option>
+          </select>
+          <select id="employeeSelect" style="display: none;" required>
+            <option value="" disabled selected>Select Employee</option>
+          </select>
+          <button type="submit" id="saleSubmitBtn">Add Sale</button>
+          <button type="button" onclick="cancelSaleEdit()" style="display: none;" id="cancelSaleBtn">Cancel</button>
+        </form>
+        <div id="saleAlert" class="alert"></div>
+      </div>
+      <h2>Sales Records</h2>
+      <table id="salesTable">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Original Price (₪)</th>
+            <th>Sale Price (₪)</th>
+            <th>Seller</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="salesList"></tbody>
+      </table>
+    </div>
+
+    <!-- Analytics Tab -->
+    <div id="analytics" class="tab-content" style="display: none;">
+      <div class="analytics-options">
+        <button onclick="showAnalyticsOption('store')">Store Analytics</button>
+        <button onclick="showAnalyticsOption('employee')">Employee Analytics</button>
+        <button onclick="showAnalyticsOption('general')">General Analytics</button>
+      </div>
+      <div id="analyticsContent">
+        <div id="storeAnalytics" class="analytics-card" style="display: none;">
+          <h2>Store Analytics</h2>
+          <label for="storeMonth">Select Month:</label>
+          <input type="month" id="storeMonth">
+          <button onclick="calculateStoreAnalytics()">Show Analytics</button>
+          <div id="storeAnalyticsResult"></div>
+        </div>
+        <div id="employeeAnalytics" class="analytics-card" style="display: none;">
+          <h2>Employee Analytics</h2>
+          <label for="employeeMonth">Select Month:</label>
+          <input type="month" id="employeeMonth" onchange="calculateEmployeeListAnalytics()">
+          <div id="employeeListAnalytics"></div>
+          <div id="employeeDetailAnalytics"></div>
+        </div>
+        <div id="generalAnalytics" class="analytics-card" style="display: none;">
+          <h2>General Analytics</h2>
+          <div>
+            <label>
+              <input type="radio" name="generalAnalysisType" value="date" checked onclick="toggleGeneralInput('date')">
+              By Date
+            </label>
+            <label>
+              <input type="radio" name="generalAnalysisType" value="month" onclick="toggleGeneralInput('month')">
+              By Month
+            </label>
+            <label>
+              <input type="radio" name="generalAnalysisType" value="period" onclick="toggleGeneralInput('period')">
+              Custom Period
+            </label>
+          </div>
+          <div id="generalDateInput" style="margin-top: 10px;">
+            <label for="generalDate">Select Date:</label>
+            <input type="date" id="generalDate">
+          </div>
+          <div id="generalMonthInput" style="margin-top: 10px; display: none;">
+            <label for="generalMonth">Select Month:</label>
+            <input type="month" id="generalMonth">
+          </div>
+          <div id="customPeriodInputs" class="custom-period">
+            <label for="generalStartDate">Start Date:</label>
+            <input type="date" id="generalStartDate">
+            <label for="generalEndDate">End Date:</label>
+            <input type="date" id="generalEndDate">
+          </div>
+          <button onclick="calculateGeneralAnalytics()">Show General Analytics</button>
+          <div id="generalAnalyticsResult"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Seller Designation Tab -->
+    <div id="topSellerDesignation" class="tab-content" style="display: none;">
+      <div class="designation-form">
+        <h2>Designate Top Seller</h2>
+        <label for="designateEmployeeSelect">Select Employee:</label>
+        <select id="designateEmployeeSelect" required>
+          <option value="" disabled selected>Select Employee</option>
+        </select>
+        <br>
+        <label for="topStartDate">Start Date:</label>
+        <input type="date" id="topStartDate" required>
+        <label for="topEndDate">End Date:</label>
+        <input type="date" id="topEndDate" required>
+        <br>
+        <button onclick="createTopSellerDesignation()">Designate as Top Seller</button>
+      </div>
+      <div class="designation-list" id="designationList"></div>
+    </div>
+
+    <!-- Employee Accounts Tab -->
+    <div id="employeeAccounts" class="tab-content" style="display: none;">
+      <div class="form-section">
+        <h2>Create Employee Account</h2>
+        <form onsubmit="handleCreateEmployeeAccount(event)">
+          <label for="accountEmployeeSelect">Select Employee:</label>
+          <select id="accountEmployeeSelect" required>
+            <option value="" disabled selected>Select Employee</option>
+          </select>
+          <input type="text" id="accountUsername" placeholder="Username" required>
+          <input type="password" id="accountPassword" placeholder="Password" required>
+          <button type="submit">Create Account</button>
+        </form>
+        <div id="accountAlert" class="alert"></div>
+      </div>
+    </div>
+
+    <!-- Employee Logins Tab -->
+    <div id="employeeLogins" class="tab-content" style="display: none;">
+      <h2>Employee Login Management</h2>
+      <table id="loginTable">
+        <thead>
+          <tr>
+            <th>Employee Name</th>
+            <th>Username</th>
+            <th>Password</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="loginList"></tbody>
+      </table>
+    </div>
+
+    <!-- Employee Messages Tab (Conversation Interface) -->
+    <div id="employeeMessages" class="tab-content" style="display: none;">
+      <div class="chat-top-bar">
+        <img src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25" class="chat-logo" alt="Logo">
+        <span>Communication with Parent Company</span>
+      </div>
+      <div class="chat-area">
+        <div id="adminChatMessages">
+          <!-- Chat messages will load here -->
+        </div>
+      </div>
+      <div class="chat-bottom-bar">
+        <input type="text" id="adminChatInput" placeholder="Type your message...">
+        <button onclick="sendAdminChatMessage()"><i class="send-icon">✈️</i></button>
+      </div>
+    </div>
+
+    <!-- Dismissed Employees Tab -->
+    <div id="dismissedEmployees" class="tab-content" style="display: none;">
+      <h2>Dismissed Employees</h2>
+      <div id="dismissedList"></div>
+    </div>
+  </div>
+
+  <!-- Employee Modal for Detailed Data -->
+  <div id="employeeModal" class="modal" onclick="closeEmployeeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <span class="modal-close" onclick="closeEmployeeModal(event)">&times;</span>
+      <div id="employeeModalContent"></div>
+    </div>
+  </div>
+
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAi3_y7ugKB0cgzMV1-IVvbE2BwG_9RKSs",
+      authDomain: "team-analysis-3c196.firebaseapp.com",
+      databaseURL: "https://team-analysis-3c196-default-rtdb.firebaseio.com",
+      projectId: "team-analysis-3c196",
+      storageBucket: "team-analysis-3c196.firebasestorage.app",
+      messagingSenderId: "38968485922",
+      appId: "1:38968485922:web:667832a4aa77599ba8a6fb",
+      measurementId: "G-853WkH2JK7"
+    };
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const storage = firebase.storage();
+
+    // For Admin, we no longer rely on localStorage employeeName.
+    // Instead, we display "Admin Dashboard" in the header.
+    document.getElementById('employeeNameDisplay').textContent = "Admin Dashboard";
+
+    // Global variable for Top Seller designations
+    let topSellerDesignations = {};
+    database.ref('topSellerDesignations').on('value', snapshot => {
+      topSellerDesignations = snapshot.val() || {};
+      renderDesignationList();
+    });
+
+    // Global mapping for all employees keyed by employee username.
+    window.employeeMap = {};
+    database.ref('employees').on('value', snapshot => {
+      const employeesData = snapshot.val() || {};
+      window.employeeMap = {};
+      const employeeCardsContainer = document.getElementById('employeeCards');
+      let cardsHTML = "";
+      for (const key in employeesData) {
+        const emp = employeesData[key];
+        // Key the employee map by their username for conversation lookups.
+        window.employeeMap[emp.username] = emp;
+        const photoURL = emp.photo ? emp.photo : "https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25";
+        cardsHTML += `
+          <div class="employee-card">
+            <img src="${photoURL}" alt="${emp.name}" onclick="showEmployeeModal('${emp.name}')">
+            <div class="employee-name">${emp.name}</div>
+            <div class="employee-type">${emp.type.charAt(0).toUpperCase() + emp.type.slice(1)}</div>
+            <div class="employee-actions">
+              <button class="edit-btn" onclick="event.stopPropagation(); editEmployee('${key}')">Edit</button>
+              <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('employees', '${key}')">Delete</button>
+            </div>
+          </div>
+        `;
+      }
+      employeeCardsContainer.innerHTML = cardsHTML;
+      
+      const employeeSelect = document.getElementById('employeeSelect');
+      employeeSelect.innerHTML = '<option value="" disabled selected>Select Employee</option>';
+      const accountEmployeeSelect = document.getElementById('accountEmployeeSelect');
+      if(accountEmployeeSelect) { accountEmployeeSelect.innerHTML = '<option value="" disabled selected>Select Employee</option>'; }
+      const designateEmployeeSelect = document.getElementById('designateEmployeeSelect');
+      if(designateEmployeeSelect) { designateEmployeeSelect.innerHTML = '<option value="" disabled selected>Select Employee</option>'; }
+      Object.values(employeesData).forEach(emp => {
+        const option1 = document.createElement('option');
+        option1.value = emp.name;
+        option1.textContent = emp.name;
+        employeeSelect.appendChild(option1);
+        const option2 = document.createElement('option');
+        option2.value = emp.name;
+        option2.textContent = emp.name;
+        if(accountEmployeeSelect) { accountEmployeeSelect.appendChild(option2); }
+        const option3 = document.createElement('option');
+        option3.value = emp.name;
+        option3.textContent = emp.name;
+        if(designateEmployeeSelect) { designateEmployeeSelect.appendChild(option3); }
+      });
+    });
+
+    // Logout function
+    function logout() {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }
+
+    // Tab Navigation
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.getElementById(tabName).style.display = 'block';
+      event.currentTarget.classList.add('active');
+    }
+
+    // Employee Management
+    let editingEmployeeKey = null;
+    async function handleEmployeeSubmit(event) {
+      event.preventDefault();
+      const name = document.getElementById('empName').value.trim();
+      const phone = document.getElementById('empPhone').value.trim();
+      const type = document.getElementById('empType').value;
+      if (!name || !phone || !type) {
+        showAlert('error', 'Please fill all fields!', 'empAlert');
+        return;
+      }
+      if (!/^\d{10}$/.test(phone)) {
+        showAlert('error', 'Invalid phone number (10 digits required)', 'empAlert');
+        return;
+      }
+      try {
+        let empData = { name, phone, type };
+        const fileInput = document.getElementById('empPhotoFile');
+        if (fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          const storageRef = storage.ref();
+          const fileRef = storageRef.child('employee_photos/' + Date.now() + "_" + file.name);
+          await fileRef.put(file);
+          const photoURL = await fileRef.getDownloadURL();
+          empData.photo = photoURL;
+        }
+        if (editingEmployeeKey) {
+          await database.ref(`employees/${editingEmployeeKey}`).update(empData);
+          showAlert('success', 'Employee updated successfully!', 'empAlert');
+        } else {
+          await database.ref('employees').push(empData);
+          showAlert('success', 'Employee added successfully!', 'empAlert');
+        }
+        cancelEdit();
+      } catch (error) {
+        showAlert('error', `Error: ${error.message}`, 'empAlert');
+      }
+    }
+    function editEmployee(key) {
+      const employeeRef = database.ref(`employees/${key}`);
+      employeeRef.once('value').then(snapshot => {
+        const emp = snapshot.val();
+        document.getElementById('empName').value = emp.name;
+        document.getElementById('empPhone').value = emp.phone;
+        document.getElementById('empType').value = emp.type;
+        editingEmployeeKey = key;
+        document.getElementById('employeeSubmitBtn').textContent = 'Update Employee';
+        document.getElementById('cancelBtn').style.display = 'inline-block';
+      });
+    }
+    function cancelEdit() {
+      editingEmployeeKey = null;
+      document.querySelector('#employees form').reset();
+      document.getElementById('employeeSubmitBtn').textContent = 'Add Employee';
+      document.getElementById('cancelBtn').style.display = 'none';
+    }
+    async function deleteRecord(type, key) {
+      if (!confirm('Are you sure you want to delete this record?')) return;
+      if (type === 'employees') {
+        const empRef = database.ref(`employees/${key}`);
+        const snapshot = await empRef.once('value');
+        const empData = snapshot.val();
+        if (empData) { await database.ref('dismissedEmployees').push(empData); }
+        await empRef.remove();
+      } else {
+        await database.ref(`${type}/${key}`).remove();
+      }
+    }
+
+    // Sales Management
+    let editingSaleKey = null;
+    function toggleEmployeeSelect() {
+      const sellerType = document.getElementById('sellerType').value;
+      const employeeSelect = document.getElementById('employeeSelect');
+      if (sellerType === 'employee') {
+        employeeSelect.style.display = 'inline-block';
+        employeeSelect.required = true;
+      } else {
+        employeeSelect.style.display = 'none';
+        employeeSelect.required = false;
+        employeeSelect.value = '';
+      }
+    }
+    async function handleSaleSubmit(event) {
+      event.preventDefault();
+      const item = document.getElementById('saleItem').value.trim();
+      const originalPrice = parseFloat(document.getElementById('originalPrice').value);
+      const salePrice = parseFloat(document.getElementById('salePrice').value);
+      const sellerType = document.getElementById('sellerType').value;
+      const employeeNameSale = sellerType === 'employee' ? document.getElementById('employeeSelect').value.trim() : null;
+      if (!item || isNaN(originalPrice) || isNaN(salePrice) || !sellerType) {
+        showAlert('error', 'Please fill all fields correctly!', 'saleAlert');
+        return;
+      }
+      if (sellerType === 'employee' && !employeeNameSale) {
+        showAlert('error', 'Please select an employee!', 'saleAlert');
+        return;
+      }
+      try {
+        const saleDataObj = {
+          productName: item,
+          originalPrice: originalPrice.toFixed(2),
+          salePrice: salePrice.toFixed(2),
+          seller: sellerType === 'employee' ? employeeNameSale : 'Store',
+          date: new Date().toISOString()
+        };
+        if (editingSaleKey) {
+          await database.ref(`sales/${editingSaleKey}`).update(saleDataObj);
+          showAlert('success', 'Sale updated successfully!', 'saleAlert');
+        } else {
+          await database.ref('sales').push(saleDataObj);
+          showAlert('success', 'Sale recorded successfully!', 'saleAlert');
+        }
+        cancelSaleEdit();
+      } catch (error) {
+        showAlert('error', `Error: ${error.message}`, 'saleAlert');
+      }
+    }
+    function editSale(key) {
+      const saleRef = database.ref(`sales/${key}`);
+      saleRef.once('value').then(snapshot => {
+        const sale = snapshot.val();
+        document.getElementById('saleItem').value = sale.productName;
+        document.getElementById('originalPrice').value = sale.originalPrice;
+        document.getElementById('salePrice').value = sale.salePrice;
+        const sellerType = sale.seller === 'Store' ? 'store' : 'employee';
+        document.getElementById('sellerType').value = sellerType;
+        toggleEmployeeSelect();
+        if (sellerType === 'employee') {
+          document.getElementById('employeeSelect').value = sale.seller;
+        }
+        editingSaleKey = key;
+        document.getElementById('saleSubmitBtn').textContent = 'Update Sale';
+        document.getElementById('cancelSaleBtn').style.display = 'inline-block';
+      });
+    }
+    function cancelSaleEdit() {
+      editingSaleKey = null;
+      document.querySelector('#sales form').reset();
+      document.getElementById('saleSubmitBtn').textContent = 'Add Sale';
+      document.getElementById('cancelSaleBtn').style.display = 'none';
+      document.getElementById('employeeSelect').style.display = 'none';
+      document.getElementById('employeeSelect').required = false;
+    }
+
+    // Real-time Updates for Employees, Sales, etc.
+    database.ref('sales').on('value', snapshot => {
+      const salesData = snapshot.val() || {};
+      const tbody = document.getElementById('salesList');
+      tbody.innerHTML = Object.entries(salesData).map(([key, sale]) => `
+        <tr>
+          <td>${sale.productName}</td>
+          <td>₪${sale.originalPrice}</td>
+          <td>₪${sale.salePrice}</td>
+          <td>${sale.seller}</td>
+          <td>${new Date(sale.date).toLocaleDateString()}</td>
+          <td>
+            <button class="edit-btn" onclick="editSale('${key}')">Edit</button>
+            <button class="delete-btn" onclick="deleteRecord('sales', '${key}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    });
+    database.ref('employeeMessages').on('value', snapshot => {
+      // This listener is kept for other potential uses
+    });
+    database.ref('employeeAccounts').on('value', snapshot => {
+      const accountsData = snapshot.val() || {};
+      const loginList = document.getElementById('loginList');
+      let loginHTML = "";
+      for (const key in accountsData) {
+        const account = accountsData[key];
+        loginHTML += `
+          <tr>
+            <td>${account.name}</td>
+            <td>${account.username}</td>
+            <td>${account.password}</td>
+            <td>
+              <button onclick="editEmployeeLogin('${key}', '${account.username}', '${account.password}')">Edit</button>
+              <button onclick="deleteEmployeeLogin('${key}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      }
+      loginList.innerHTML = loginHTML;
+    });
+    database.ref('dismissedEmployees').on('value', snapshot => {
+      const dismissedData = snapshot.val() || {};
+      const dismissedList = document.getElementById('dismissedList');
+      let dismissedHTML = "<table><thead><tr><th>Name</th><th>Type</th><th>Phone</th><th>Actions</th></tr></thead><tbody>";
+      for (const key in dismissedData) {
+        const emp = dismissedData[key];
+        dismissedHTML += `<tr>
+          <td>${emp.name}</td>
+          <td>${emp.type}</td>
+          <td>${emp.phone}</td>
+          <td><button class="delete-btn" onclick="permanentlyDeleteEmployee('${key}')">Permanently Delete</button></td>
+        </tr>`;
+      }
+      dismissedHTML += "</tbody></table>";
+      dismissedList.innerHTML = dismissedHTML;
+    });
+
+    // Top Seller Designation Functions
+    function createTopSellerDesignation() {
+      const employee = document.getElementById('designateEmployeeSelect').value;
+      const startDate = document.getElementById('topStartDate').value;
+      const endDate = document.getElementById('topEndDate').value;
+      if(!employee || !startDate || !endDate) {
+        alert("Please fill all fields for designation.");
+        return;
+      }
+      const designationData = { employee, startDate, endDate };
+      database.ref('topSellerDesignations').push(designationData)
+      .then(() => { alert("Designation created successfully."); })
+      .catch(error => { alert("Error: " + error.message); });
+    }
+    function renderDesignationList() {
+      const listDiv = document.getElementById('designationList');
+      let html = "";
+      for(const key in topSellerDesignations) {
+        const des = topSellerDesignations[key];
+        html += `<div class="designation-item">
+          <p><strong>Employee:</strong> ${des.employee}</p>
+          <p><strong>Period:</strong> ${des.startDate} to ${des.endDate}</p>
+          <button class="delete-btn" onclick="removeDesignation('${key}')">Cancel Designation</button>
+        </div>`;
+      }
+      listDiv.innerHTML = html;
+    }
+    function removeDesignation(key) {
+      if(confirm("Are you sure you want to cancel this designation?")) {
+        database.ref(`topSellerDesignations/${key}`).remove();
+      }
+    }
+
+    // Shared Functions for Admin Page
+    async function deleteEmployeeLogin(key) {
+      if (!confirm('Are you sure you want to delete this employee login account?')) return;
+      await database.ref(`employeeAccounts/${key}`).remove();
+    }
+    function editEmployeeLogin(key, username, password) {
+      const newUsername = prompt("Enter new username:", username);
+      if (newUsername === null) return;
+      const newPassword = prompt("Enter new password:", password);
+      if (newPassword === null) return;
+      database.ref(`employeeAccounts/${key}`).update({ username: newUsername, password: newPassword })
+      .then(() => { alert("Employee login updated successfully."); })
+      .catch(error => { alert("Error: " + error.message); });
+    }
+    function permanentlyDeleteEmployee(key) {
+      if (confirm("Are you sure you want to permanently delete this dismissed employee? This action cannot be undone.")) {
+        database.ref(`dismissedEmployees/${key}`).remove();
+      }
+    }
+    function showAlert(type, message, elementId) {
+      const alertElem = document.getElementById(elementId);
+      alertElem.className = `alert ${type}`;
+      alertElem.textContent = message;
+      alertElem.style.display = 'block';
+      setTimeout(() => alertElem.style.display = 'none', 3000);
+    }
+
+    /* ------------------ Analytics Functions ------------------ */
+    function showAnalyticsOption(option) {
+      document.getElementById('storeAnalytics').style.display = 'none';
+      document.getElementById('employeeAnalytics').style.display = 'none';
+      document.getElementById('generalAnalytics').style.display = 'none';
+      if(option === 'store') {
+        document.getElementById('storeAnalytics').style.display = 'block';
+      } else if(option === 'employee') {
+        document.getElementById('employeeAnalytics').style.display = 'block';
+        calculateEmployeeListAnalytics();
+      } else if(option === 'general') {
+        document.getElementById('generalAnalytics').style.display = 'block';
+      }
+    }
+    // Helper: Check if a sale falls within a top seller designation period for an employee
+    function getTopSellerRate(empName, saleDate) {
+      let rate = 0.5; // default for regular employee
+      for(const key in topSellerDesignations) {
+        const des = topSellerDesignations[key];
+        if(des.employee === empName) {
+          const start = new Date(des.startDate);
+          const end = new Date(des.endDate);
+          const saleDt = new Date(saleDate);
+          if(saleDt >= start && saleDt <= end) {
+            rate = 0.6;
+            break;
+          }
+        }
+      }
+      return rate;
+    }
+    function calculateStoreAnalytics() {
+      const month = document.getElementById('storeMonth').value;
+      let storeProfit = 0;
+      let totalProfit = 0;
+      let storeSalesCount = 0;
+      let totalSalesCount = 0;
+      database.ref('sales').once('value').then(snapshot => {
+        const salesData = snapshot.val() || {};
+        for (const key in salesData) {
+          const sale = salesData[key];
+          if (sale.date.startsWith(month)) {
+            const profit = parseFloat(sale.salePrice) - parseFloat(sale.originalPrice);
+            totalProfit += profit;
+            totalSalesCount++;
+            if (sale.seller === "Store") {
+              storeProfit += profit;
+              storeSalesCount++;
+            } else {
+              let empType = null;
+              database.ref('employees').orderByChild('name').equalTo(sale.seller).once('value').then(empSnap => {
+                empSnap.forEach(child => { empType = child.val().type; });
+                if (empType === "regular") {
+                  storeProfit += profit * 0.5;
+                } else if (empType === "distinguished") {
+                  storeProfit += profit * 0.3;
+                }
+              });
+            }
+          }
+        }
+        const storeProfitPercentage = totalProfit ? ((storeProfit / totalProfit) * 100).toFixed(2) : 0;
+        const storeSalesPercentage = totalSalesCount ? ((storeSalesCount / totalSalesCount) * 100).toFixed(2) : 0;
+        document.getElementById('storeAnalyticsResult').innerHTML = `
+          <p>Total Store Profit: ₪${storeProfit.toFixed(2)}</p>
+          <p>This is ${storeProfitPercentage}% of total profit (₪${totalProfit.toFixed(2)})</p>
+          <p>Store Sales Count: ${storeSalesCount} (${storeSalesPercentage}% of ${totalSalesCount} sales)</p>
+        `;
+      });
+    }
+    function calculateEmployeeListAnalytics() {
+      const month = document.getElementById('employeeMonth').value;
+      let content = '<div class="analytics-employee-cards">';
+      database.ref('employees').once('value').then(snapshot => {
+        const employeesData = snapshot.val() || {};
+        database.ref('sales').once('value').then(snapSales => {
+          const salesData = snapSales.val() || {};
+          for (const key in employeesData) {
+            const emp = employeesData[key];
+            let salesCount = 0;
+            let totalProfit = 0;
+            for (const saleKey in salesData) {
+              const sale = salesData[saleKey];
+              if (sale.date.startsWith(month) && sale.seller === emp.name) {
+                const profit = parseFloat(sale.salePrice) - parseFloat(sale.originalPrice);
+                salesCount++;
+                if (emp.type === "regular") {
+                  totalProfit += profit * getTopSellerRate(emp.name, sale.date);
+                } else if (emp.type === "distinguished") {
+                  totalProfit += profit * 0.7;
+                }
+              }
+            }
+            content += `
+              <div class="analytics-employee-card" onclick="showEmployeeAnalytics('${emp.name}')">
+                <h4>${emp.name}</h4>
+                <p>Type: ${emp.type.charAt(0).toUpperCase() + emp.type.slice(1)}</p>
+                <p>Sales: ${salesCount}</p>
+                <p>Profit: ₪${totalProfit.toFixed(2)}</p>
+                <button onclick="event.stopPropagation(); showEmployeeAnalytics('${emp.name}')">View Details</button>
+              </div>
+            `;
+          }
+          content += '</div>';
+          document.getElementById('employeeListAnalytics').innerHTML = content;
+          document.getElementById('employeeDetailAnalytics').innerHTML = "";
+        });
+      });
+    }
+    // Improved showEmployeeAnalytics with edit and delete options on sales
+    function showEmployeeAnalytics(empName) {
+      const month = document.getElementById('employeeMonth').value;
+      let employeeProfit = 0;
+      let salesCount = 0;
+      let salesListHTML = "<h4>Sales Details:</h4><table><tr><th>Product</th><th>Original Price</th><th>Sale Price</th><th>Date</th><th>Actions</th></tr>";
+      database.ref('sales').orderByChild('seller').equalTo(empName).once('value').then(snapshot => {
+        const salesData = snapshot.val() || {};
+        for (const saleKey in salesData) {
+          const sale = salesData[saleKey];
+          if (!sale.date.startsWith(month)) continue;
+          const profit = parseFloat(sale.salePrice) - parseFloat(sale.originalPrice);
+          employeeProfit += profit * getTopSellerRate(empName, sale.date);
+          salesCount++;
+          salesListHTML += `<tr>
+            <td>${sale.productName}</td>
+            <td>₪${sale.originalPrice}</td>
+            <td>₪${sale.salePrice}</td>
+            <td>${new Date(sale.date).toLocaleDateString()}</td>
+            <td>
+              <button class="edit-btn" onclick="editSale('${saleKey}')">Edit</button>
+              <button class="delete-btn" onclick="deleteRecord('sales', '${saleKey}')">Delete</button>
+            </td>
+          </tr>`;
+        }
+        salesListHTML += "</table>";
+        document.getElementById('employeeDetailAnalytics').innerHTML = `
+          <p>${empName} made ${salesCount} sale(s) in ${month}, earning a profit of ₪${employeeProfit.toFixed(2)}.</p>
+          ${salesListHTML}
+        `;
+      });
+    }
+    function calculateGeneralAnalytics() {
+      const analysisType = document.querySelector('input[name="generalAnalysisType"]:checked').value;
+      let totalProfit = 0;
+      let storeProfit = 0;
+      let employeeProfit = 0;
+      database.ref('sales').once('value').then(snapshot => {
+        const salesData = snapshot.val() || {};
+        for (const key in salesData) {
+          const sale = salesData[key];
+          let includeSale = false;
+          if (analysisType === "date") {
+            includeSale = (sale.date.slice(0, 10) === document.getElementById('generalDate').value);
+          } else if (analysisType === "month") {
+            includeSale = sale.date.startsWith(document.getElementById('generalMonth').value);
+          } else if (analysisType === "period") {
+            const start = new Date(document.getElementById('generalStartDate').value);
+            const end = new Date(document.getElementById('generalEndDate').value);
+            const saleDate = new Date(sale.date);
+            includeSale = (saleDate >= start && saleDate <= end);
+          }
+          if (!includeSale) continue;
+          const profit = parseFloat(sale.salePrice) - parseFloat(sale.originalPrice);
+          totalProfit += profit;
+          if (sale.seller === "Store") {
+            storeProfit += profit;
+          } else {
+            let empType = null;
+            database.ref('employees').orderByChild('name').equalTo(sale.seller).once('value').then(empSnap => {
+              empSnap.forEach(child => { empType = child.val().type; });
+              if (empType === "regular") {
+                employeeProfit += profit * getTopSellerRate(sale.seller, sale.date);
+                storeProfit += profit * (1 - getTopSellerRate(sale.seller, sale.date));
+              } else if (empType === "distinguished") {
+                employeeProfit += profit * 0.7;
+                storeProfit += profit * 0.3;
+              }
+            });
+          }
+        }
+        setTimeout(() => {
+          const employeeProfitPercentage = totalProfit ? ((employeeProfit / totalProfit) * 100).toFixed(2) : 0;
+          const storeProfitPercentage = totalProfit ? ((storeProfit / totalProfit) * 100).toFixed(2) : 0;
+          document.getElementById('generalAnalyticsResult').innerHTML = `
+            <p>Total Profit: ₪${totalProfit.toFixed(2)}</p>
+            <p>Store Profit: ₪${storeProfit.toFixed(2)} (${storeProfitPercentage}%)</p>
+            <p>Employee Profit: ₪${employeeProfit.toFixed(2)} (${employeeProfitPercentage}%)</p>
+          `;
+        }, 1500);
+      });
+    }
+    function toggleGeneralInput(selected) {
+      if (selected === 'date') {
+        document.getElementById('generalDateInput').style.display = 'block';
+        document.getElementById('generalMonthInput').style.display = 'none';
+        document.getElementById('customPeriodInputs').style.display = 'none';
+      } else if (selected === 'month') {
+        document.getElementById('generalDateInput').style.display = 'none';
+        document.getElementById('generalMonthInput').style.display = 'block';
+        document.getElementById('customPeriodInputs').style.display = 'none';
+      } else if (selected === 'period') {
+        document.getElementById('generalDateInput').style.display = 'none';
+        document.getElementById('generalMonthInput').style.display = 'none';
+        document.getElementById('customPeriodInputs').style.display = 'block';
+      }
+    }
+    function showEmployeeModal(empName) {
+      let employee = null;
+      database.ref('employees').orderByChild('name').equalTo(empName).once('value').then(snapshot => {
+        snapshot.forEach(child => { employee = child.val(); });
+        if (!employee) return;
+        let totalProfit = 0;
+        let salesCount = 0;
+        let salesDetailsHTML = "<table><tr><th>Product</th><th>Original Price</th><th>Sale Price</th><th>Date</th><th>Actions</th></tr>";
+        database.ref('sales').orderByChild('seller').equalTo(empName).once('value').then(snapSales => {
+          const salesData = snapSales.val() || {};
+          for (const saleKey in salesData) {
+            const sale = salesData[saleKey];
+            if (!sale.date.startsWith(document.getElementById('employeeMonth').value)) continue;
+            const profit = parseFloat(sale.salePrice) - parseFloat(sale.originalPrice);
+            totalProfit += profit * getTopSellerRate(empName, sale.date);
+            salesCount++;
+            salesDetailsHTML += `<tr>
+              <td>${sale.productName}</td>
+              <td>₪${sale.originalPrice}</td>
+              <td>₪${sale.salePrice}</td>
+              <td>${new Date(sale.date).toLocaleDateString()}</td>
+              <td>
+                <button class="edit-btn" onclick="editSale('${saleKey}')">Edit</button>
+                <button class="delete-btn" onclick="deleteRecord('sales', '${saleKey}')">Delete</button>
+              </td>
+            </tr>`;
+          }
+          salesDetailsHTML += "</table>";
+          const modalContent = document.getElementById('employeeModalContent');
+          modalContent.innerHTML = `
+            <h3>Employee Details</h3>
+            <p><strong>Name:</strong> ${employee.name}</p>
+            <p><strong>Phone:</strong> ${employee.phone}</p>
+            <p><strong>Type:</strong> ${employee.type.charAt(0).toUpperCase() + employee.type.slice(1)}</p>
+            <p><strong>Total Sales:</strong> ${salesCount}</p>
+            <p><strong>Total Profit:</strong> ₪${totalProfit.toFixed(2)}</p>
+            <h4>Sales History:</h4>
+            ${salesDetailsHTML}
+          `;
+          document.getElementById('employeeModal').style.display = 'flex';
+        });
+      });
+    }
+    function closeEmployeeModal(event) { document.getElementById('employeeModal').style.display = 'none'; }
+    function handleCreateEmployeeAccount(event) {
+      event.preventDefault();
+      const employeeNameAcc = document.getElementById('accountEmployeeSelect').value;
+      const accountUsername = document.getElementById('accountUsername').value.trim();
+      const accountPassword = document.getElementById('accountPassword').value.trim();
+      if(!employeeNameAcc || !accountUsername || !accountPassword) {
+        showAlert('error', 'Please fill all fields for account creation!', 'accountAlert');
+        return;
+      }
+      const accountData = { name: employeeNameAcc, username: accountUsername, password: accountPassword };
+      database.ref('employeeAccounts').push(accountData)
+      .then(() => {
+        showAlert('success', 'Employee account created successfully!', 'accountAlert');
+        document.querySelector('#employeeAccounts form').reset();
+      })
+      .catch(error => { showAlert('error', `Error: ${error.message}`, 'accountAlert'); });
+    }
+    function editReply(messageKey, currentReply) {
+      const reply = prompt("Edit your reply:", currentReply);
+      if(reply !== null) {
+        database.ref(`employeeMessages/${messageKey}`).update({ reply })
+        .then(() => { alert("Reply updated."); })
+        .catch(error => { alert("Error: " + error.message); });
+      }
+    }
+    function deleteMessage(messageKey) {
+      if(confirm("Are you sure you want to delete this message?")) {
+        database.ref(`employeeMessages/${messageKey}`).remove();
+      }
+    }
+
+    /* ------------------ Conversation Interface Functions for Admin ------------------ */
+    function loadAdminChatMessages() {
+      database.ref('conversation').orderByChild('date').on('value', snapshot => {
+        const messagesData = snapshot.val() || {};
+        let chatHTML = "";
+        for (const key in messagesData) {
+          const msg = messagesData[key];
+          if (msg.sender === "admin") {
+            // Admin message: green bubble with delete button
+            chatHTML += `<div class="chat-bubble admin">
+              <span>${msg.message}</span>
+              <div style="font-size:10px; text-align:right;">${new Date(msg.date).toLocaleTimeString()}</div>
+              <button class="delete-msg" onclick="deleteChatMessage('${key}')">Delete</button>
+            </div>`;
+          } else {
+            // Employee message: white bubble with employee's name and account picture, plus delete button.
+            // Use msg.employeeUsername to look up the employee details.
+            let empDetails = window.employeeMap[msg.employeeUsername] || {};
+            let empName = empDetails.name || msg.employeeUsername || "Employee";
+            let empPhoto = empDetails.photo || 'https://via.placeholder.com/30';
+            chatHTML += `<div class="chat-bubble employee">
+              <img class="emp-photo" src="${empPhoto}" alt="Emp Photo">
+              <span class="emp-name">${empName}</span>
+              <span>${msg.message}</span>
+              <div style="font-size:10px;">${new Date(msg.date).toLocaleTimeString()}</div>
+              <button class="delete-msg" onclick="deleteChatMessage('${key}')">Delete</button>
+            </div>`;
+          }
+        }
+        document.getElementById('adminChatMessages').innerHTML = chatHTML;
+        document.querySelector('.chat-area').scrollTop = document.querySelector('.chat-area').scrollHeight;
+      });
+    }
+    loadAdminChatMessages();
+    function sendAdminChatMessage() {
+      const input = document.getElementById('adminChatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      const messageData = {
+        sender: "admin",
+        message: text,
+        date: new Date().toISOString()
+      };
+      database.ref('conversation').push(messageData)
+      .then(() => { input.value = ""; });
+    }
+    function deleteChatMessage(key) {
+      if(confirm("Are you sure you want to delete this message?")) {
+        database.ref('conversation/' + key).remove();
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Business Management System</title>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700" rel="stylesheet">
+  <style>
+    /* Basic styling for login page */
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-container {
+      background: #fff;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.15);
+      width: 300px;
+      text-align: center;
+    }
+    .login-container h2 {
+      margin-bottom: 20px;
+    }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 2px solid #eee;
+      border-radius: 6px;
+    }
+    button {
+      padding: 12px;
+      width: 100%;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    .alert {
+      color: #e74c3c;
+      margin-top: 10px;
+    }
+    .login-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin-bottom: 20px;
+      object-fit: cover;
+    }
+  </style>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+</head>
+<body>
+  <div class="login-container">
+    <!-- Small rounded image for login page -->
+    <img class="login-logo" src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25" alt="Login Logo">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <input type="text" id="username" placeholder="Username" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+    <div id="loginAlert" class="alert"></div>
+  </div>
+
+  <script>
+    // Firebase Configuration (same as in the other pages)
+    const firebaseConfig = {
+      apiKey: "AIzaSyAi3_y7ugKB0cgzMV1-IVvbE2BwG_9RKSs",
+      authDomain: "team-analysis-3c196.firebaseapp.com",
+      databaseURL: "https://team-analysis-3c196-default-rtdb.firebaseio.com",
+      projectId: "team-analysis-3c196",
+      storageBucket: "team-analysis-3c196.firebasestorage.app",
+      messagingSenderId: "38968485922",
+      appId: "1:38968485922:web:667832a4aa77599ba8a6fb",
+      measurementId: "G-853WkH2JK7"
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const loginAlert = document.getElementById('loginAlert');
+
+      // Check for admin credentials first
+      if(username === "a7mad.mutaz" && password === "123&ahmad") {
+        // Set session (for demonstration, using localStorage)
+        localStorage.setItem('userRole', 'admin');
+        window.location.href = "admin.html";
+        return;
+      }
+
+      // Otherwise, check employee accounts
+      database.ref('employeeAccounts').orderByChild('username').equalTo(username).once('value')
+      .then(snapshot => {
+        if(snapshot.exists()) {
+          let valid = false;
+          let employeeData;
+          snapshot.forEach(childSnapshot => {
+            employeeData = childSnapshot.val();
+            if(employeeData.password === password) {
+              valid = true;
+            }
+          });
+          if(valid) {
+            // Set session info
+            localStorage.setItem('userRole', 'employee');
+            localStorage.setItem('employeeName', employeeData.name); // employee's full name
+            localStorage.setItem('employeeUsername', employeeData.username);
+            window.location.href = "employee.html";
+          } else {
+            loginAlert.textContent = "Invalid password for employee account.";
+          }
+        } else {
+          loginAlert.textContent = "No account found with this username.";
+        }
+      })
+      .catch(error => {
+        loginAlert.textContent = "Error: " + error.message;
+      });
+    });
+  </script>
+</body>
+</html>
