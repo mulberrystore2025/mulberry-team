@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام إدارة الأعمال - واجهة الموظف</title>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700" rel="stylesheet">
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+  <style>
+    /* خلفية الفيديو */
+    #bg-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1;
+    }
+    /* زر الترجمة الثابت في زاوية الشاشة */
+    #language-toggle-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+      z-index: 2000;
+    }
+    /* Global Styles */
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    /* تحسين واجهة تسجيل الدخول */
+    #login-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      /* خلفية شفافة حتى يظهر الفيديو */
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    .login-box {
+      background: #fff;
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+    }
+    .login-logo {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 20px;
+      border: 2px solid #3498db;
+    }
+    .login-box h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+    .login-box input {
+      width: 100%;
+      padding: 12px 15px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    .login-box input:focus {
+      border-color: #3498db;
+    }
+    .login-box button {
+      width: 100%;
+      padding: 12px;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-top: 10px;
+    }
+    .login-box button:hover {
+      background: #2980b9;
+    }
+    #login-error {
+      margin-top: 10px;
+      color: #e74c3c;
+      font-weight: bold;
+    }
+    /* لوحة الموظف والواجهات الداخلية */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      padding: 20px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+    }
+    .header-logo {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 10px;
+    }
+    .logout-btn {
+      padding: 10px 20px;
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    .logout-btn:hover { 
+      background: #c0392b; 
+    }
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    }
+    /* التنقل بين الواجهات */
+    .tab-nav {
+      display: flex;
+      border-bottom: 2px solid #ddd;
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    .tab-nav button {
+      flex: 1;
+      padding: 15px;
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .tab-nav button:hover { 
+      background: #f0f0f0; 
+    }
+    .tab-nav button.active {
+      border-bottom: 4px solid #3498db;
+      font-weight: bold;
+    }
+    /* واجهة التحليلات */
+    .filter-section {
+      margin-bottom: 20px;
+      padding: 20px;
+      background: #f0f4f8;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .filter-section label {
+      margin-right: 10px;
+      font-weight: 500;
+    }
+    .filter-section input {
+      margin-right: 10px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .filter-section button {
+      padding: 10px 18px;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .filter-section button:hover { 
+      background: #2980b9; 
+    }
+    .sales-card {
+      background: #f7f9fc;
+      border-radius: 10px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .sales-card table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .sales-card th, .sales-card td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+    .sales-card th { 
+      background: #3498db; 
+      color: #fff; 
+    }
+    .sales-summary {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+    /* واجهة المحادثة - تحسين التصميم */
+    .chat-header {
+      background: #f1f1f1;
+      padding: 15px;
+      border-bottom: 1px solid #ddd;
+      border-radius: 8px 8px 0 0;
+    }
+    .chat-header-upper {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .chat-logo {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 10px;
+    }
+    .chat-team-title {
+      font-size: 20px;
+      margin: 0;
+    }
+    /* العبارة الجديدة Mulberry-CEO */
+    .chat-team-title span.blue {
+      color: blue;
+    }
+    .chat-team-title span.purple {
+      color: purple;
+    }
+    .chat-top-bar {
+      padding: 10px;
+      background: #fff;
+      border-radius: 0 0 8px 8px;
+      text-align: center;
+      font-size: 16px;
+      border-top: 1px solid #ddd;
+    }
+    .chat-area {
+      height: 400px;
+      overflow-y: auto;
+      background: url('https://t3.ftcdn.net/jpg/01/99/79/88/360_F_199798806_PAFfWGapie6Mk8igqKHbhIIa9LwQcvQr.jpg') no-repeat center center;
+      background-size: cover;
+      padding: 15px;
+      border-bottom: 1px solid #ddd;
+    }
+    .chat-bottom-bar {
+      display: flex;
+      padding: 15px;
+      background: #f9f9f9;
+      border-top: 1px solid #ddd;
+      border-radius: 0 0 8px 8px;
+    }
+    .chat-bottom-bar input[type="text"] {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      margin-right: 10px;
+      font-size: 16px;
+    }
+    .chat-bottom-bar button {
+      background: #3498db;
+      border: none;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      cursor: pointer;
+      font-size: 20px;
+      color: #fff;
+      transition: background 0.3s;
+    }
+    .chat-bottom-bar button:hover {
+      background: #2980b9;
+    }
+    .chat-bubble {
+      max-width: 70%;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      position: relative;
+      clear: both;
+      font-size: 16px;
+    }
+    .chat-bubble.employee {
+      background: #27ae60;
+      color: #fff;
+      margin-left: auto;
+    }
+    .chat-bubble.admin {
+      background: #fff;
+      color: #000;
+      border: 1px solid #ddd;
+      margin-right: auto;
+      padding-left: 50px;
+    }
+    .chat-bubble.admin .admin-name {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
+    /* واجهة الإعدادات */
+    .account-settings {
+      padding: 25px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .account-settings h3 { 
+      margin-top: 0; 
+      font-size: 22px;
+      color: #333;
+    }
+    .account-settings label { 
+      display: block; 
+      margin-top: 15px; 
+      font-size: 16px;
+    }
+    .account-settings input[type="text"],
+    .account-settings input[type="password"],
+    .account-settings input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    .account-settings button {
+      margin-top: 20px;
+      padding: 12px 25px;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    .account-settings button:hover { 
+      background: #2980b9; 
+    }
+    /* Responsive Styles */
+    @media (max-width: 768px) {
+      .container { padding: 20px; }
+      .header { flex-direction: column; align-items: flex-start; }
+      .logout-btn { align-self: stretch; text-align: center; margin-top: 15px; }
+      .chat-area { height: 250px; }
+      .tab-nav button { font-size: 14px; }
+    }
+    @media (max-width: 480px) {
+      .login-box { padding: 20px; }
+      .header { padding: 10px; }
+      .container { padding: 15px; }
+      .chat-area { height: 180px; }
+      .chat-header-upper { flex-direction: column; align-items: flex-start; }
+      .chat-team-title { font-size: 18px; margin-top: 5px; }
+      .tab-nav button { font-size: 13px; padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- فيديو الخلفية -->
+  <video autoplay muted loop id="bg-video">
+    <source src="https://cdn.dribbble.com/userupload/28774288/file/large-0f5d92145d706df70e061ebbf838fa27.mp4" type="video/mp4">
+    متصفحك لا يدعم تشغيل الفيديو.
+  </video>
+  
+  <!-- زر الترجمة الثابت في زاوية الشاشة -->
+  <button id="language-toggle-btn" onclick="toggleLanguage()">English</button>
+  
+  <!-- واجهة تسجيل الدخول -->
+  <div id="login-container">
+    <div class="login-box">
+      <!-- استخدام شعار الموقع المحدث -->
+      <img src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=t1gVfldlQs4Q7kNvgGjoaxK&_nc_oc=AdhT4BIzKi15F-iGe7xLfAiPm85FbdPJo4HZLQvgBBpCYR5BzsTjf8eDisYDZ1WHnSk&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AzohpnieZa7VN3td52s2-_v&oh=00_AYBO5gvHsIXBBLl1nih3QYI5eugBBTOMRqIIuLzu3_seCA&oe=67C98CA5" alt="شعار الموقع" class="login-logo">
+      <h2 id="login-title">تسجيل الدخول</h2>
+      <form id="login-form">
+        <input type="text" id="login-username" placeholder="اسم المستخدم" required>
+        <input type="password" id="login-password" placeholder="كلمة المرور" required>
+        <button type="submit" id="login-button">دخول</button>
+      </form>
+      <div id="login-error"></div>
+    </div>
+  </div>
+
+  <!-- واجهة لوحة الموظف -->
+  <div id="dashboard-container" style="display: none;">
+    <div class="header">
+      <div class="header-left">
+        <!-- صورة حساب الموظف تبقى كما هي -->
+        <img class="header-logo" id="employeePhotoDisplay" src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg" alt="صورة الموظف">
+        <h1 id="employeeNameDisplay"></h1>
+      </div>
+      <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
+    </div>
+    <div class="container">
+      <!-- التنقل بين الواجهات -->
+      <div class="tab-nav">
+        <button class="active" onclick="showEmployeeTab('analytics')">التحليلات</button>
+        <button onclick="showEmployeeTab('conversation')">المحادثة</button>
+        <button onclick="showEmployeeTab('settings')">الإعدادات</button>
+      </div>
+      
+      <!-- واجهة التحليلات -->
+      <div id="analytics" class="employee-tab" style="display: block;">
+        <div class="filter-section">
+          <label>تصفية المبيعات حسب:</label>
+          <label>
+            <input type="radio" name="filterType" value="day" checked onclick="toggleFilterInputs('day')"> يوم
+          </label>
+          <label>
+            <input type="radio" name="filterType" value="month" onclick="toggleFilterInputs('month')"> شهر
+          </label>
+          <label>
+            <input type="radio" name="filterType" value="period" onclick="toggleFilterInputs('period')"> فترة مخصصة
+          </label>
+          <div id="filterDay" style="margin-top:10px;">
+            <input type="date" id="filterDayInput">
+          </div>
+          <div id="filterMonth" style="margin-top:10px; display:none;">
+            <input type="month" id="filterMonthInput">
+          </div>
+          <div id="filterPeriod" style="margin-top:10px; display:none;">
+            <label>من:</label>
+            <input type="date" id="filterStartDate">
+            <label>إلى:</label>
+            <input type="date" id="filterEndDate">
+          </div>
+          <button onclick="loadSalesData()">تطبيق التصفية</button>
+        </div>
+        <h2>بيانات المبيعات والأرباح الخاصة بك</h2>
+        <div id="salesData" class="sales-card">
+          <!-- هنا تُحمّل بيانات المبيعات -->
+        </div>
+        <div class="sales-summary" id="salesSummary"></div>
+      </div>
+      
+      <!-- واجهة المحادثة مع تحسين المظهر -->
+      <div id="conversation" class="employee-tab" style="display: none;">
+         <div class="chat-header">
+            <div class="chat-header-upper">
+               <img src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=t1gVfldlQs4Q7kNvgGjoaxK&_nc_oc=AdhT4BIzKi15F-iGe7xLfAiPm85FbdPJo4HZLQvgBBpCYR5BzsTjf8eDisYDZ1WHnSk&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AzohpnieZa7VN3td52s2-_v&oh=00_AYBO5gvHsIXBBLl1nih3QYI5eugBBTOMRqIIuLzu3_seCA&oe=67C98CA5" class="chat-logo" alt="شعار الموقع">
+               <h2 class="chat-team-title">
+                 <span class="blue">Mulberry</span><span class="purple">-CEO</span>
+               </h2>
+            </div>
+            <div class="chat-top-bar">
+               <span id="chat-header-text">التواصل مع الشركة الأم</span>
+            </div>
+         </div>
+         <div class="chat-area">
+           <div id="employeeChatMessages">
+             <!-- تُحمّل الرسائل هنا -->
+           </div>
+         </div>
+         <div class="chat-bottom-bar">
+           <input type="text" id="employeeChatInput" placeholder="اكتب رسالتك...">
+           <button onclick="sendEmployeeChatMessage()"><i class="send-icon">✈️</i></button>
+         </div>
+      </div>
+      
+      <!-- واجهة الإعدادات -->
+      <div id="settings" class="employee-tab" style="display: none;">
+        <div class="account-settings">
+          <h3>إعدادات الحساب</h3>
+          <label for="accUsername">تغيير اسم المستخدم:</label>
+          <input type="text" id="accUsername" placeholder="اسم مستخدم جديد">
+          <label for="accPassword">تغيير كلمة المرور:</label>
+          <input type="password" id="accPassword" placeholder="كلمة مرور جديدة">
+          <label for="accPhoto">تغيير الصورة الشخصية:</label>
+          <input type="file" id="accPhoto" accept="image/*">
+          <button onclick="updateAccountSettings()">تحديث الإعدادات</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // إعدادات Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAi3_y7ugKB0cgzMV1-IVvbE2BwG_9RKSs",
+      authDomain: "team-analysis-3c196.firebaseapp.com",
+      databaseURL: "https://team-analysis-3c196-default-rtdb.firebaseio.com",
+      projectId: "team-analysis-3c196",
+      storageBucket: "team-analysis-3c196.firebasestorage.app",
+      messagingSenderId: "38968485922",
+      appId: "1:38968485922:web:667832a4aa77599ba8a6fb",
+      measurementId: "G-853WkH2JK7"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const storage = firebase.storage();
+
+    // إعدادات الترجمة
+    let currentLanguage = 'ar';
+    const translations = {
+      ar: { 
+        loginTitle: "تسجيل الدخول",
+        usernamePlaceholder: "اسم المستخدم",
+        passwordPlaceholder: "كلمة المرور",
+        loginButton: "دخول",
+        welcome: "مرحباً، ",
+        tabAnalytics: "التحليلات",
+        tabConversation: "المحادثة",
+        tabSettings: "الإعدادات",
+        chatHeader: "التواصل مع الشركة الأم",
+        chatInputPlaceholder: "اكتب رسالتك...",
+        supportName: "الدعم الفني",
+        accountSettings: "إعدادات الحساب"
+      },
+      en: {
+        loginTitle: "Login",
+        usernamePlaceholder: "Username",
+        passwordPlaceholder: "Password",
+        loginButton: "Login",
+        welcome: "Welcome, ",
+        tabAnalytics: "Analytics",
+        tabConversation: "Conversation",
+        tabSettings: "Settings",
+        chatHeader: "Communication with Parent Company",
+        chatInputPlaceholder: "Type your message...",
+        supportName: "Technical Support",
+        accountSettings: "Account Settings"
+      }
+    };
+
+    function updateLanguageTexts() {
+      // تحديث نصوص واجهة تسجيل الدخول
+      const loginTitleElement = document.querySelector('#login-container .login-box h2');
+      if(loginTitleElement) loginTitleElement.textContent = translations[currentLanguage].loginTitle;
+      const loginUsernameInput = document.getElementById('login-username');
+      if(loginUsernameInput) loginUsernameInput.placeholder = translations[currentLanguage].usernamePlaceholder;
+      const loginPasswordInput = document.getElementById('login-password');
+      if(loginPasswordInput) loginPasswordInput.placeholder = translations[currentLanguage].passwordPlaceholder;
+      const loginButton = document.querySelector('#login-form button');
+      if(loginButton) loginButton.textContent = translations[currentLanguage].loginButton;
+
+      // تحديث عنوان الترحيب في لوحة الموظف
+      const employeeNameDisplay = document.getElementById('employeeNameDisplay');
+      if(employeeNameDisplay) {
+         let employeeName = localStorage.getItem('employeeName') || '';
+         employeeNameDisplay.textContent = translations[currentLanguage].welcome + employeeName;
+      }
+
+      // تحديث أسماء أزرار التنقل
+      const tabButtons = document.querySelectorAll('.tab-nav button');
+      if(tabButtons.length >= 3) {
+         tabButtons[0].textContent = translations[currentLanguage].tabAnalytics;
+         tabButtons[1].textContent = translations[currentLanguage].tabConversation;
+         tabButtons[2].textContent = translations[currentLanguage].tabSettings;
+      }
+
+      // تحديث نص واجهة المحادثة
+      const chatHeaderText = document.getElementById('chat-header-text');
+      if(chatHeaderText) chatHeaderText.textContent = translations[currentLanguage].chatHeader;
+      const chatInput = document.getElementById('employeeChatInput');
+      if(chatInput) chatInput.placeholder = translations[currentLanguage].chatInputPlaceholder;
+
+      // تحديث عنوان واجهة الإعدادات
+      const accountSettingsHeader = document.querySelector('.account-settings h3');
+      if(accountSettingsHeader) accountSettingsHeader.textContent = translations[currentLanguage].accountSettings;
+
+      // تحديث نص زر الترجمة (المثبت)
+      const languageToggleBtn = document.getElementById('language-toggle-btn');
+      if(languageToggleBtn) languageToggleBtn.textContent = currentLanguage === 'ar' ? "English" : "العربية";
+
+      // إعادة تحميل رسائل المحادثة لتحديث اسم "الدعم الفني"
+      loadEmployeeChatMessages();
+    }
+
+    function toggleLanguage() {
+      currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
+      updateLanguageTexts();
+    }
+
+    // عند تحميل الصفحة: التحقق من وجود جلسة تسجيل دخول مسبقة
+    document.addEventListener("DOMContentLoaded", function() {
+      const employeeName = localStorage.getItem('employeeName');
+      if (employeeName) {
+        showDashboard(employeeName);
+      } else {
+        document.getElementById('login-container').style.display = 'flex';
+      }
+      updateLanguageTexts();
+    });
+
+    // معالجة نموذج تسجيل الدخول
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      if (!username || !password) {
+        document.getElementById('login-error').textContent = currentLanguage === 'ar' ? "الرجاء إدخال اسم المستخدم وكلمة المرور." : "Please enter username and password.";
+        return;
+      }
+      // البحث في قاعدة البيانات عن الحساب المطابق
+      database.ref('employeeAccounts').orderByChild('username').equalTo(username).once('value')
+      .then(snapshot => {
+        let valid = false;
+        snapshot.forEach(child => {
+          const account = child.val();
+          if (account.password === password) {
+            valid = true;
+            // تخزين بيانات المستخدم في التخزين المحلي
+            localStorage.setItem('employeeName', account.name);
+            localStorage.setItem('employeeUsername', username);
+          }
+        });
+        if (valid) {
+          showDashboard(localStorage.getItem('employeeName'));
+        } else {
+          document.getElementById('login-error').textContent = currentLanguage === 'ar' ? "اسم المستخدم أو كلمة المرور غير صحيحة." : "Incorrect username or password.";
+        }
+      })
+      .catch(error => {
+        document.getElementById('login-error').textContent = currentLanguage === 'ar' ? "خطأ: " + error.message : "Error: " + error.message;
+      });
+    });
+
+    // إظهار واجهة لوحة الموظف بعد نجاح تسجيل الدخول
+    function showDashboard(employeeName) {
+      document.getElementById('login-container').style.display = 'none';
+      document.getElementById('dashboard-container').style.display = 'block';
+      document.getElementById('employeeNameDisplay').textContent = translations[currentLanguage].welcome + employeeName;
+      loadEmployeePhoto();
+      loadSalesData();
+      loadEmployeeChatMessages();
+      loadReplies();
+    }
+
+    // دالة تسجيل الخروج
+    function logout() {
+      localStorage.clear();
+      location.reload();
+    }
+
+    // متغير لتخزين بيانات "البائع المتميز"
+    let topSellerDesignations = {};
+    database.ref('topSellerDesignations').on('value', snapshot => {
+      topSellerDesignations = snapshot.val() || {};
+    });
+
+    // دالة مساعدة لحساب نسبة "البائع المتميز" للمبيعات
+    function getTopSellerRate(empName, saleDate) {
+      let rate = 0.5; // النسبة الافتراضية للموظف العادي
+      for (const key in topSellerDesignations) {
+        const des = topSellerDesignations[key];
+        if (des.employee === empName) {
+          const start = new Date(des.startDate);
+          const end = new Date(des.endDate);
+          const saleDt = new Date(saleDate);
+          if (saleDt >= start && saleDt <= end) {
+            rate = 0.6;
+            break;
+          }
+        }
+      }
+      return rate;
+    }
+
+    // تحميل بيانات المبيعات (واجهة التحليلات)
+    function loadSalesData() {
+      const employeeName = localStorage.getItem('employeeName');
+      database.ref('employees').orderByChild('name').equalTo(employeeName).once('value')
+      .then(empSnapshot => {
+        let employeeType = "regular";
+        empSnapshot.forEach(child => { employeeType = child.val().type; });
+        database.ref('sales').orderByChild('seller').equalTo(employeeName).once('value')
+        .then(snapshot => {
+          const salesData = snapshot.val() || {};
+          let totalSales = 0;
+          let totalProfit = 0;
+          let tableHTML = "<table><tr><th>المنتج</th><th>السعر الأصلي (₪)</th><th>سعر البيع (₪)</th><th>التاريخ</th></tr>";
+          const filterType = document.querySelector('input[name="filterType"]:checked').value;
+          let filterFn = sale => true;
+          if (filterType === "day") {
+            const day = document.getElementById('filterDayInput').value;
+            if (day) { filterFn = sale => sale.date.slice(0,10) === day; }
+          } else if (filterType === "month") {
+            const month = document.getElementById('filterMonthInput').value;
+            if (month) { filterFn = sale => sale.date.startsWith(month); }
+          } else if (filterType === "period") {
+            const start = new Date(document.getElementById('filterStartDate').value);
+            const end = new Date(document.getElementById('filterEndDate').value);
+            if(document.getElementById('filterStartDate').value && document.getElementById('filterEndDate').value) {
+              filterFn = sale => {
+                const saleDate = new Date(sale.date);
+                return saleDate >= start && saleDate <= end;
+              };
+            }
+          }
+          for (const key in salesData) {
+            const sale = salesData[key];
+            if (!filterFn(sale)) continue;
+            totalSales++;
+            const rawProfit = parseFloat(sale.salePrice) - parseFloat(sale.originalPrice);
+            let percentage = 0.5;
+            if (employeeType === "distinguished") {
+              percentage = 0.7;
+            } else if (employeeType === "regular") {
+              percentage = getTopSellerRate(employeeName, sale.date);
+            }
+            totalProfit += rawProfit * percentage;
+            tableHTML += `<tr>
+              <td>${sale.productName}</td>
+              <td>₪${sale.originalPrice}</td>
+              <td>₪${sale.salePrice}</td>
+              <td>${new Date(sale.date).toLocaleDateString()}</td>
+            </tr>`;
+          }
+          tableHTML += "</table>";
+          document.getElementById('salesData').innerHTML = tableHTML;
+          document.getElementById('salesSummary').innerHTML = `<p>إجمالي المبيعات: ${totalSales} | إجمالي الأرباح: ₪${totalProfit.toFixed(2)}</p>`;
+        });
+      });
+    }
+
+    // تغيير طريقة عرض مدخلات التصفية (واجهة التحليلات)
+    function toggleFilterInputs(type) {
+      document.getElementById('filterDay').style.display = (type === 'day') ? 'block' : 'none';
+      document.getElementById('filterMonth').style.display = (type === 'month') ? 'block' : 'none';
+      document.getElementById('filterPeriod').style.display = (type === 'period') ? 'block' : 'none';
+    }
+
+    // تحميل صورة الموظف في رأس الصفحة
+    function loadEmployeePhoto() {
+      const employeeName = localStorage.getItem('employeeName');
+      database.ref('employees').orderByChild('name').equalTo(employeeName).once('value')
+      .then(snapshot => {
+        let empPhoto = "";
+        snapshot.forEach(child => { empPhoto = child.val().photo; });
+        if (empPhoto) {
+          document.getElementById('employeePhotoDisplay').src = empPhoto;
+        }
+      });
+    }
+
+    /* ------------------ وظائف واجهة المحادثة ------------------ */
+    function loadEmployeeChatMessages() {
+      database.ref('conversation').orderByChild('date').on('value', snapshot => {
+        const messagesData = snapshot.val() || {};
+        let chatHTML = "";
+        for (const key in messagesData) {
+          const msg = messagesData[key];
+          if (msg.sender === "admin") {
+            chatHTML += `<div class="chat-bubble admin">
+              <span class="admin-name">${translations[currentLanguage].supportName}</span>
+              <span>${msg.message}</span>
+              <div style="font-size:12px;">${new Date(msg.date).toLocaleTimeString()}</div>
+            </div>`;
+          } else {
+            chatHTML += `<div class="chat-bubble employee">
+              <span>${msg.message}</span>
+              <div style="font-size:12px; text-align:right;">${new Date(msg.date).toLocaleTimeString()}</div>
+            </div>`;
+          }
+        }
+        document.getElementById('employeeChatMessages').innerHTML = chatHTML;
+        document.querySelector('.chat-area').scrollTop = document.querySelector('.chat-area').scrollHeight;
+      });
+    }
+    function sendEmployeeChatMessage() {
+      const input = document.getElementById('employeeChatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      const messageData = {
+        sender: "employee",
+        employeeUsername: localStorage.getItem('employeeUsername'),
+        message: text,
+        date: new Date().toISOString()
+      };
+      database.ref('conversation').push(messageData)
+      .then(() => { input.value = ""; });
+    }
+
+    /* ------------------ وظائف واجهة الإعدادات ------------------ */
+    function updateAccountSettings() {
+      const newUsername = document.getElementById('accUsername').value.trim();
+      const newPassword = document.getElementById('accPassword').value.trim();
+      const fileInput = document.getElementById('accPhoto');
+      const employeeName = localStorage.getItem('employeeName');
+      database.ref('employees').orderByChild('name').equalTo(employeeName).once('value')
+      .then(snapshot => {
+        let empKey = null;
+        snapshot.forEach(child => { empKey = child.key; });
+        if (!empKey) return;
+        let updates = {};
+        if(newUsername) { updates.username = newUsername; }
+        if(newPassword) { updates.password = newPassword; }
+        if (fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          const storageRef = storage.ref();
+          const fileRef = storageRef.child('employee_photos/' + Date.now() + "_" + file.name);
+          fileRef.put(file).then(() => {
+            fileRef.getDownloadURL().then(photoURL => {
+              updates.photo = photoURL;
+              database.ref('employees/' + empKey).update(updates);
+              database.ref('employeeAccounts').orderByChild('name').equalTo(employeeName).once('value')
+              .then(snap => {
+                snap.forEach(child => {
+                  child.ref.update({ username: newUsername || child.val().username, password: newPassword || child.val().password });
+                });
+              });
+              loadEmployeePhoto();
+              alert(currentLanguage === 'ar' ? "تم تحديث إعدادات الحساب." : "Account settings updated.");
+            });
+          });
+        } else {
+          database.ref('employees/' + empKey).update(updates);
+          database.ref('employeeAccounts').orderByChild('name').equalTo(employeeName).once('value')
+          .then(snap => {
+            snap.forEach(child => {
+              child.ref.update({ username: newUsername || child.val().username, password: newPassword || child.val().password });
+            });
+          });
+          alert(currentLanguage === 'ar' ? "تم تحديث إعدادات الحساب." : "Account settings updated.");
+        }
+      });
+    }
+
+    /* ------------------ التنقل بين الواجهات ------------------ */
+    function showEmployeeTab(tabName) {
+      document.querySelectorAll('.employee-tab').forEach(tab => tab.style.display = 'none');
+      const tabs = document.querySelectorAll('.tab-nav button');
+      tabs.forEach(btn => btn.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      document.getElementById(tabName).style.display = 'block';
+    }
+
+    /* ------------------ إرسال الرسائل الإضافية ------------------ */
+    document.getElementById('messageForm')?.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const messageText = document.getElementById('messageText').value.trim();
+      if (!messageText) return;
+      const messageData = {
+        employeeUsername: localStorage.getItem('employeeUsername'),
+        message: messageText,
+        date: new Date().toISOString(),
+        reply: ""
+      };
+      database.ref('employeeMessages').push(messageData)
+      .then(() => {
+        document.getElementById('messageAlert').textContent = currentLanguage === 'ar' ? "تم إرسال الرسالة بنجاح!" : "Message sent successfully!";
+        document.getElementById('messageText').value = "";
+      })
+      .catch(error => {
+        document.getElementById('messageAlert').textContent = currentLanguage === 'ar' ? "خطأ: " + error.message : "Error: " + error.message;
+      });
+    });
+
+    /* تحميل الردود في واجهة المحادثة */
+    function loadReplies() {
+      database.ref('employeeMessages').orderByChild('employeeUsername').equalTo(localStorage.getItem('employeeUsername')).on('value', snapshot => {
+        const messages = snapshot.val() || {};
+        let repliesHTML = "";
+        for (const key in messages) {
+          const msg = messages[key];
+          if (msg.reply) {
+            repliesHTML += `<div class="chat-bubble received">
+              <p>${msg.reply}</p>
+              <small>${new Date(msg.date).toLocaleString()}</small>
+            </div>`;
+          }
+        }
+        document.getElementById('replies') && (document.getElementById('replies').innerHTML = repliesHTML);
+      });
+    }
+    loadReplies();
+  </script>
+</body>
+</html>
